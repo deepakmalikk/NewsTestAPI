@@ -7,8 +7,7 @@ api_key = os.getenv("API_KEY")
 #initialize API client
 api = NewsDataApiClient(apikey=api_key)
 
-#To get latest news related to country india 
-response = api.latest_api(country="au,us")
+#To get latest news related to country india and language english and removing duplicate news articles 
+response = api.latest_api(country="in",language="en", removeduplicate=True)
 news_title = [i['title'] for i in response['results']]
-
-print(len(news_title))
+print(news_title)
