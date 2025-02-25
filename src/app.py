@@ -46,12 +46,12 @@ def get_news_title() -> str:
 
 
 print(get_news_title())
-# Create news agent with improved description
+# Create news agent 
 myagent = Agent(
     name="News Headline Generator",
     tools=[get_news_title],
     description="""You are a news headline generator that:
-    1. Fetches latest news headlines from {get_news_title()}
+    1. Fetches latest news headlines from {get_news_title()} this will give title with extra info like source name but you only have to bring headline
     2. Generates one opinion questions realted to the headline
     3. Provides outcome option of this opinion
     your aim to spark meaningful conversations about current events.""",
