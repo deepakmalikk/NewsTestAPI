@@ -5,7 +5,14 @@ from dotenv import load_dotenv
 from agno.agent import Agent
 from agno.models.openai import OpenAIChat
 from time import sleep
+import streamlit as st
 
+# Set page configuration
+st.set_page_config(
+    page_title="News Headline Generator",
+    page_icon="📰",
+    layout="wide"
+)
 # Load environment variables
 load_dotenv()
 api_key = os.getenv("NEWS_API_KEY")
@@ -45,7 +52,7 @@ def get_news_title() -> str:
         return []
 
 
-print(get_news_title())
+st.write(f"News API response:       {get_news_title()}")
 # Create news agent 
 myagent = Agent(
     name="News Headline Generator",
@@ -60,4 +67,6 @@ myagent = Agent(
 )
 
 
-myagent.print_response("Generate opinion questions for the latest news")
+run_result =myagent.run("Generate opinion questions for the latest news")
+st.markdown("-------------------------LLM Result -------------------------")
+st.markdown(run_result.content)
