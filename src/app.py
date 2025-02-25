@@ -1,13 +1,63 @@
+from typing import List, Dict, Optional
 from newsdataapi import NewsDataApiClient
-import os 
+import os
 from dotenv import load_dotenv
+from agno.agent import Agent
+from agno.models.openai import OpenAIChat
+from time import sleep
 
+# Load environment variables
 load_dotenv()
-api_key = os.getenv("API_KEY")
-#initialize API client
+api_key = os.getenv("NEWS_API_KEY")
+if not api_key:
+    raise ValueError("NEWS_API_KEY not found in environment variables")
+
+# Initialize API client
 api = NewsDataApiClient(apikey=api_key)
 
-#To get latest news related to country india and language english and removing duplicate news articles 
-response = api.latest_api(country="in",language="en", removeduplicate=True)
-news_title = [i['title'] for i in response['results']]
-print(news_title)
+def get_news_title() -> str:
+    """
+    Get a list of news titles with error handling and rate limiting.
+
+
+    Returns:
+        str: A string representing a list of news titles
+
+    Raises:
+        Exception: If API call fails
+    """
+    try:
+        # Add rate limiting
+        sleep(0.1)  # 100ms delay between requests
+        
+        response = api.latest_api(
+           language= "en",
+            removeduplicate=True
+        )
+        
+        if not response.get('results'):
+            return []
+            
+        return response['results'][0]['title']
+        
+    except Exception as e:
+        print(f"Error fetching news: {str(e)}")
+        return []
+
+
+print(get_news_title())
+# Create news agent with improved description
+myagent = Agent(
+    name="News Headline Generator",
+    tools=[get_news_title],
+    description="""You are a news headline generator that:
+    1. Fetches latest news headlines from {get_news_title()}
+    2. Generates one opinion questions realted to the headline
+    3. Provides outcome option of this opinion
+    your aim to spark meaningful conversations about current events.""",
+    markdown=True,
+    show_tool_calls=True
+)
+
+
+myagent.print_response("Generate opinion questions for the latest news")
