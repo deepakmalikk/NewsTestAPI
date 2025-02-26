@@ -111,7 +111,7 @@ def llm_selector() -> Optional[tuple]:
         # Validate API keys
         try:
             api_keys = api_setup()
-            selected_api_key = api_keys.get(selected_llm)
+            _ = api_keys.get(selected_llm)
         except ValueError as e:
             st.error(str(e))
             return None
@@ -123,17 +123,16 @@ def llm_selector() -> Optional[tuple]:
 
 # --------------------- Initialize Selected LLM ---------------------
 
-def model():
+def get_model(selection: Optional[tuple]):
     """
     Returns an instance of the selected LLM model using the chosen provider.
 
+    Args:
+        selection (Optional[tuple]): A tuple of (LLM provider, model) from the sidebar.
+
     Returns:
         An instance of the selected LLM class with its API key.
-    
-    Raises:
-        ValueError: If an unsupported LLM provider is selected.
     """
-    selection = llm_selector()
     if selection is None:
         return None
 
@@ -173,12 +172,13 @@ def get_user_input() -> str:
 
 # --------------------- News Headline Generation Agent ---------------------
 
-def main_Agent(user_query: str):
+def main_Agent(user_query: str, selection: Optional[tuple]):
     """
     Creates and runs the News Headline Generator agent.
     
     The agent:
-      - Takes the provided news headline.
+      - Takes the provided user query (which includes a news title and extra info) 
+        and extracts only the headline.
       - Generates one opinion question related to the headline.
       - Provides possible opinion outcomes to spark discussions.
     """
@@ -186,30 +186,31 @@ def main_Agent(user_query: str):
         st.info("Please enter or paste a news headline to proceed.")
         return
 
-    llm_model = model()
-    if llm_model is None:
+    if selection is None:
         st.error("No LLM model selected. Please choose an option from the sidebar.")
+        return
+
+    llm_model = get_model(selection)
+    if llm_model is None:
+        st.error("Error initializing the LLM model.")
         return
 
     myagent = Agent(
         name="News Headline Generator",
-        # tools=[],  
         model=llm_model,
         description=(
             "You are a news headline generator that:\n"
-            "1. Takes the user query that will give news title with extra info like source name but you only have to take the headline.\n"
-            "2. Prepare news headline from provided user query.\n"
+            "1. Takes the user query that includes a news title with extra info (like source name) "
+            "but extracts only the headline.\n"
+            "2. Refines the news headline from the provided query.\n"
             "3. Generates one opinion question related to the headline.\n"
-            "4. Provides possible opinion outcomes.\n"
-            
+            "4. Provides possible opinion outcomes to spark discussions.\n"
         ),
         markdown=True,
         show_tool_calls=True
     )
 
-    # Run the agent using the user's input
     run_result = myagent.run(user_query)
-
     st.markdown("------------------------- LLM Result -------------------------")
     st.markdown(run_result.content)
 
@@ -217,8 +218,10 @@ def main_Agent(user_query: str):
 
 def main():
     page_setup()
+    # Call the LLM selector so the sidebar is always rendered
+    selection = llm_selector()
     user_query = get_user_input()
-    main_Agent(user_query)
+    main_Agent(user_query, selection)
 
 if __name__ == "__main__":
     main()
