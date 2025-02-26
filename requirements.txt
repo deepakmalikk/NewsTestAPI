@@ -1,9 +1,9 @@
 requests
 python-dotenv
 newsdataapi
-requests
-python-dotenv
-newsdataapi
-agno 
-openai
 streamlit
+agno
+openai
+anthropic
+google-genai
+
