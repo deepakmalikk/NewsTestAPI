@@ -1,12 +1,9 @@
 requests
 python-dotenv
 newsdataapi
-<<<<<<< HEAD
-=======
 requests
 python-dotenv
 newsdataapi
->>>>>>> 8e0a55ec97a66d3d8a9de1de9ec3a34dd5241a64
 agno 
 openai
 streamlit
