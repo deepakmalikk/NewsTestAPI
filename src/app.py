@@ -88,9 +88,9 @@ def llm_selector() -> Optional[tuple]:
 
         # Available LLMs and their models
         llm_models = {
-            "OpenAIChat": ["gpt-4o", "gpt-4o-mini", "gpt-3.5-turbo"],
+            "OpenAIChat": ["gpt-4o", "gpt-4o-mini", "gpt-4.5-preview"],
             "xAI": ["grok-2-1212", "grok-beta"],
-            "Claude": ["claude-3-7-sonnet-20250219", "claude-3-5-haiku-20241022"],
+            "Claude": ["claude-3-7-sonnet-20250219", "claude-3-5-haiku-20241022","claude-3-opus-20240229"],
             "Gemini": ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-flash-8b"]
         }
 
@@ -251,12 +251,6 @@ def main_Agent(user_query: str, selection: Optional[tuple]):
                     {"id": "D", "text": "Mixed outcome"}
                 ]
                 }"""
-            # "You are a news headline generator that:\n"
-            # "1. Takes the user query that includes a news title with extra info (like source name) "
-            # "but extracts only the headline.\n"
-            # "2. Refines the news headline from the provided query.\n"
-            # "3. Generates one opinion question related to the headline.\n"
-            # "4. Provides possible opinion outcomes to spark discussions.\n"
         ),
         markdown=True,
         show_tool_calls=True
