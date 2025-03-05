@@ -186,7 +186,6 @@ Headline: "Steve Smith retires from ODI cricket after Champions Trophy exit"
 {{
   "headline": "Steve Smith retires from ODI cricket after Champions Trophy exit",
   "question": "Is there any possibility that Steve Smith might reverse his retirement decision or take on a non-playing role in Australia's next ODI series?",
-  "date_pattern": "2025-06-01",
   "category": "Sports",
   "source": "The Hindu",
   "options": [
