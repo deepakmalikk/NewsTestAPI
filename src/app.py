@@ -9,6 +9,7 @@ from agno.models.openai import OpenAIChat
 from agno.models.anthropic import Claude
 from agno.models.google import Gemini
 from agno.models.xai import xAI
+from datetime import date
 
 # --------------------- Page Setup ---------------------
 
@@ -92,10 +93,10 @@ def llm_selector() -> Optional[tuple]:
         st.title("Select an LLM Model")
         # Available LLMs and their models
         llm_models = {
-            "OpenAIChat": ["gpt-4o", "gpt-4o-mini", "gpt-4.5-preview"],
+            "OpenAIChat": ["gpt-4o", "gpt-4.5-preview"],
             "xAI": ["grok-2-1212", "grok-beta"],
             "Claude": ["claude-3-7-sonnet-20250219", "claude-3-5-haiku-20241022", "claude-3-opus-20240229"],
-            "Gemini": ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-flash-8b"]
+            "Gemini": ["gemini-2.0-flash", "gemini-1.5-flash-8b"]
         }
     
         provider_options = ["Select an LLM Provider"] + list(llm_models.keys())
@@ -179,10 +180,11 @@ def main_Agent(user_query: str, selection: Optional[tuple]):
     Creates and runs the News Headline Generator agent.
     
     The agent:
-      - Takes the provided user query (which includes a news title and extra info) 
-        and extracts only the headline.
-      - Generates one opinion question related to the headline.
-      - Provides possible opinion outcomes to spark discussions.
+      - Extracts the core headline text.
+      - Generates an opinion question and options based on the headline.
+      - Ensures that any generated "date_pattern" is in the future relative to the provided current date.
+    
+    Here we inject the current system date as a reference into the prompt.
     """
     if not user_query:
         st.info("Please enter or paste a news headline to proceed.")
@@ -197,62 +199,69 @@ def main_Agent(user_query: str, selection: Optional[tuple]):
         st.error("Error initializing the LLM model.")
         return
 
+    # Get today's date as reference
+    current_date = date.today().strftime('%Y-%m-%d')
+    
     myagent = Agent(
         name="News Headline Generator",
         model=llm_model,
         description=(
-           """You are a precision news prediction generator. Strictly follow these rules:
+           f"""You are a precision news prediction generator. Strictly follow these rules:
 
-                1. HEADLINE PROCESSING:
-                - Extract ONLY the core headline text, removing source names/extra info
-                - Identify: [ENTITY], [NUMERIC_VALUE], [TIMEFRAME], [EVENT_DATE]
+1. HEADLINE PROCESSING:
+   - Extract ONLY the core headline text, removing source names/extra info.
+   - Identify key elements: [ENTITY], [NUMERIC_VALUE], [TIMEFRAME], [EVENT_DATE].
 
-                2. QUESTION GENERATION:
-                - Format: "Will [ENTITY] [ACTION] [CRITERIA] [TIMEFRAME]?"
-                - Use exact numbers/dates from headline
-                - Timeframe must match: today/this week/YYYY-MM-DD
+2. QUESTION GENERATION:
+   - Format: "Will [ENTITY] [ACTION] [CRITERIA] [TIMEFRAME]?"
+   - Use exact numbers/dates from the headline.
+   - Timeframe must match the formats: today / this week / YYYY-MM-DD.
 
-                3. OPTIONS:
-                - 4 mutually exclusive options
-                - Market questions: Bullish/Bearish/Neutral/Alternative
-                - Policy questions: Yes/No/Partial/Alternative
+3. OPTIONS:
+   - Generate 4 mutually exclusive options.
+   - For market questions: options like Bullish/Bearish/Neutral/Alternative.
+   - For policy questions: options like Yes/No/Partial/Alternative.
 
-                4. VALIDATION:
-                - Numbers must match headline exactly
-                - One clear resolution criteria
-                - No hypothetical scenarios
+4. VALIDATION:
+   - Ensure numbers match exactly those in the headline.
+   - Use one clear resolution criteria.
+   - Avoid hypothetical scenarios.
 
-                OUTPUT FORMAT:
-                {
-                "headline": "Original Headline",
-                "question": "Will...?",
-                "date_pattern": "timeframe",
-                "category": "CATEGORY",
-                "source": "Cleaned Source",
-                "options": [
-                    {"id": "A", "text": "Option1"},
-                    {"id": "B", "text": "Option2"},
-                    {"id": "C", "text": "Option3"},
-                    {"id": "D", "text": "Option4"}
-                ]
-                }
+5. DATE PREDICTION RULE:
+   - Based on the current system date ({current_date}), ensure that any date in "date_pattern" is in the future.
+   - If the generated date is in the past relative to {current_date}, update it to the current or an upcoming year.
 
-                EXAMPLE:
-                Headline: "Fed hints at June rate pause"
-                →
-                {
-                "headline": "Fed hints at June rate pause",
-                "question": "Will the Fed pause rate hikes at the June 13-14 meeting?",
-                "date_pattern": "2023-06-14",
-                "category": "Financials",
-                "source": "Bloomberg",
-                "options": [
-                    {"id": "A", "text": "Yes, full pause (0bps)"},
-                    {"id": "B", "text": "No, 25bps hike"},
-                    {"id": "C", "text": "No, 50bps hike"},
-                    {"id": "D", "text": "Mixed outcome"}
-                ]
-                }"""
+OUTPUT FORMAT:
+{{
+  "headline": "Original Headline",
+  "question": "Will...?",
+  "date_pattern": "timeframe",
+  "category": "CATEGORY",
+  "source": "Cleaned Source",
+  "options": [
+      {{"id": "A", "text": "Option1"}},
+      {{"id": "B", "text": "Option2"}},
+      {{"id": "C", "text": "Option3"}},
+      {{"id": "D", "text": "Option4"}}
+  ]
+}}
+
+EXAMPLE:
+Headline: "Fed hints at June rate pause"
+→
+{{
+  "headline": "Fed hints at June rate pause",
+  "question": "Will the Fed pause rate hikes at the June 13-14 meeting?",
+  "date_pattern": "2025-06-14",
+  "category": "Financials",
+  "source": "Bloomberg",
+  "options": [
+      {{"id": "A", "text": "Yes, full pause (0bps)"}},
+      {{"id": "B", "text": "No, 25bps hike"}},
+      {{"id": "C", "text": "No, 50bps hike"}},
+      {{"id": "D", "text": "Mixed outcome"}}
+  ]
+}}"""
         ),
         markdown=True,
         show_tool_calls=True
@@ -268,7 +277,7 @@ def main_Agent(user_query: str, selection: Optional[tuple]):
 
 def main():
     page_setup()
-    # Call the LLM selector so the sidebar is always rendered
+    # Render the sidebar LLM selector
     selection = llm_selector()
     user_query = get_user_input()
     main_Agent(user_query, selection)
